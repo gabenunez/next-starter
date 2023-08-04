@@ -1,24 +1,27 @@
 import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
 
-export default async function middleware(req: NextRequest) {
-  // Get the pathname of the request (e.g. /, /protected)
-  const path = req.nextUrl.pathname;
+export function middleware(request: NextRequest): NextResponse {
+  const { pathname } = request.nextUrl;
 
-  // If it's the root path, just render it
-  if (path === "/") {
+  if (
+    pathname.startsWith("/_next/") ||
+    pathname.startsWith("/api/makeswift/")
+  ) {
     return NextResponse.next();
   }
 
-  const session = await getToken({
-    req,
-    secret: process.env.NEXTAUTH_SECRET,
-  });
+  if (!pathname.endsWith("/")) {
+    const url = new URL(request.nextUrl);
 
-  if (!session && path === "/protected") {
-    return NextResponse.redirect(new URL("/login", req.url));
-  } else if (session && (path === "/login" || path === "/register")) {
-    return NextResponse.redirect(new URL("/protected", req.url));
+    url.pathname += "/";
+
+    return NextResponse.redirect(url);
   }
-  return NextResponse.next();
+
+  const response = NextResponse.next();
+
+  response.cookies.set("test", "12334");
+
+  return response;
 }
